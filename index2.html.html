@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoreboard Operator Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #2c3e50; /* Dark Blue */
+            color: white;
+        }
+        .control-panel {
+            background-color: #34495e;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+        h1 { color: #ecf0f1; margin-bottom: 30px; }
+        .team-controls {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .team-box {
+            background-color: #2980b9;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            width: 45%;
+        }
+        .team-box.home { background-color: #e74c3c; } /* Red */
+        .team-box.away { background-color: #2ecc71; } /* Green */
+        .score-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        .team-name-input {
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        button {
+            padding: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        .point-btn {
+            background-color: #f39c12; /* Orange */
+            color: white;
+        }
+        .point-btn:hover { background-color: #d35400; }
+        .update-btn {
+            background-color: #3498db; /* Light Blue */
+            color: white;
+            margin-top: 20px;
+            padding: 15px;
+            font-weight: bold;
+        }
+        .update-btn:hover { background-color: #2980b9; }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏀 Operator Scoreboard Control</h1>
+
+    <div class="control-panel">
+        <div class="team-controls">
+            <div class="team-box home">
+                <label for="homeNameInput">Home Team Name</label>
+                <input type="text" id="homeNameInput" class="team-name-input" value="Lakers">
+            </div>
+            <div class="team-box away">
+                <label for="awayNameInput">Away Team Name</label>
+                <input type="text" id="awayNameInput" class="team-name-input" value="Celtics">
+            </div>
+        </div>
+
+        <div class="team-controls">
+            <div class="team-box home">
+                <h2>HOME SCORE: <span id="homeCurrentScore">0</span></h2>
+                <div class="btn-group">
+                    <button class="point-btn" onclick="addPoints('home', 1)">+1 Point</button>
+                    <button class="point-btn" onclick="addPoints('home', 2)">+2 Points</button>
+                    <button class="point-btn" onclick="addPoints('home', 3)">+3 Points</button>
+                    <button class="point-btn" onclick="addPoints('home', -1)">-1 Point (Correction)</button>
+                </div>
+            </div>
+            <div class="team-box away">
+                <h2>AWAY SCORE: <span id="awayCurrentScore">0</span></h2>
+                <div class="btn-group">
+                    <button class="point-btn" onclick="addPoints('away', 1)">+1 Point</button>
+                    <button class="point-btn" onclick="addPoints('away', 2)">+2 Points</button>
+                    <button class="point-btn" onclick="addPoints('away', 3)">+3 Points</button>
+                    <button class="point-btn" onclick="addPoints('away', -1)">-1 Point (Correction)</button>
+                </div>
+            </div>
+        </div>
+
+        <label for="quarterInput">Current Quarter (1-4, OT)</label>
+        <input type="text" id="quarterInput" class="score-input" value="1">
+
+        <label for="timeInput">Game Clock (MM:SS)</label>
+        <input type="text" id="timeInput" class="score-input" value="12:00">
+
+        <button class="update-btn" onclick="updateScoreboard()">PUBLISH LIVE SCOREBOARD</button>
+    </div>
+
+    <script>
+        let homeScore = 0;
+        let awayScore = 0;
+        const HOME_NAME_INPUT = document.getElementById('homeNameInput');
+        const AWAY_NAME_INPUT = document.getElementById('awayNameInput');
+        const QUARTER_INPUT = document.getElementById('quarterInput');
+        const TIME_INPUT = document.getElementById('timeInput');
+        const HOME_SCORE_DISPLAY = document.getElementById('homeCurrentScore');
+        const AWAY_SCORE_DISPLAY = document.getElementById('awayCurrentScore');
+
+        // Load initial state from local storage (if available)
+        window.onload = function() {
+            const storedState = JSON.parse(localStorage.getItem('basketballScoreboard'));
+            if (storedState) {
+                homeScore = storedState.homeScore;
+                awayScore = storedState.awayScore;
+                HOME_NAME_INPUT.value = storedState.homeName;
+                AWAY_NAME_INPUT.value = storedState.awayName;
+                QUARTER_INPUT.value = storedState.quarter;
+                TIME_INPUT.value = storedState.time;
+                HOME_SCORE_DISPLAY.textContent = homeScore;
+                AWAY_SCORE_DISPLAY.textContent = awayScore;
+            }
+        }
+
+        // Function to modify scores
+        function addPoints(team, points) {
+            if (team === 'home') {
+                homeScore = Math.max(0, homeScore + points); // Ensure score doesn't go below 0
+                HOME_SCORE_DISPLAY.textContent = homeScore;
+            } else if (team === 'away') {
+                awayScore = Math.max(0, awayScore + points);
+                AWAY_SCORE_DISPLAY.textContent = awayScore;
+            }
+        }
+
+        // Function to publish the scoreboard (Simulates sending data to the server)
+        function updateScoreboard() {
+            const scoreboardData = {
+                homeName: HOME_NAME_INPUT.value || 'HOME',
+                awayName: AWAY_NAME_INPUT.value || 'AWAY',
+                homeScore: homeScore,
+                awayScore: awayScore,
+                quarter: QUARTER_INPUT.value || '1',
+                time: TIME_INPUT.value || '12:00'
+            };
+
+            // *** REAL-TIME SIMULATION USING LOCAL STORAGE ***
+            // In a real application, this is where you'd use fetch() or Socket.io
+            // to send the scoreboardData object to your backend server.
+            localStorage.setItem('basketballScoreboard', JSON.stringify(scoreboardData));
+
+            // Optional: Visually confirm update
+            alert('Scoreboard published live!');
+        }
+    </script>
+</body>
+</html>
